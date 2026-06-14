@@ -51,7 +51,7 @@ git clone https://github.com/kepano/obsidian-skills.git ~/.opencode/skills/obsid
    ```bash
    NEW_WIKI_PATH=/path/to/new/vault/
    cp llm-wiki-setup.md $NEW_WIKI_PATH
-   cp -r template/* $NEW_WIKI_PATH
+   cp -r template/. $NEW_WIKI_PATH
    ```
 
 3. From the root of your new Vault, start your local AI client tool. If you

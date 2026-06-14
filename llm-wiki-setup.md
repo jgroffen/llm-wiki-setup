@@ -35,6 +35,8 @@ If it is not a git repo, initialize git:
 git init
 ```
 
+Do not assume any other git configuration such as `git config user.email` is to be performed.
+
 If it is already an Obsidian vault, preserve existing `.obsidian/` basics and ignore plugin state, caches, workspace churn, private files, and binary source files by default.
 
 Ensure a safe `.gitignore` exists that ignores:
