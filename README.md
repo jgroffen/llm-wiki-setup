@@ -1,4 +1,4 @@
-This document contains setup notes for this WIKI. It is not part of the wiki.
+This repo contains instructions for setting up an LLM Wiki using Obsidian.
 
 # One-Time Setup
 
