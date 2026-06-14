@@ -66,3 +66,7 @@ Use this prompt after the core system exists:
 ```
 Read AGENTS.md and inspect the current LLM Wiki. Search the catalog before opening Raw sources. Compile any unprocessed Raw sources into concise Wiki notes, keep every claim linked to sources, rebuild indexes, run lint/source checks, and summarize what changed.
 ```
+
+# Thankyou
+
+This process is heavily based on the work of `wanderloots`: https://github.com/wanderloots-tutorials/vibe-coding/blob/main/wanderloots-llm-wiki-core-setup-v1.0.0.md
