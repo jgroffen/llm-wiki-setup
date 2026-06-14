@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# LLM Wiki pre-commit gate. Install with: bash scripts/install_hooks.sh
+set -euo pipefail
+
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT"
+
+echo "[pre-commit] building catalog and indexes..."
+python3 scripts/wiki_tool.py build
+
+echo "[pre-commit] linting compiled Wiki notes..."
+python3 scripts/wiki_tool.py lint
+
+echo "[pre-commit] linting Raw sources..."
+python3 scripts/wiki_tool.py source-lint
+
+echo "[pre-commit] auditing for public safety..."
+python3 scripts/audit_public.py
+
+# Re-stage any build artifacts the build step regenerated.
+git add Wiki/catalog.jsonl Wiki/index.md Wiki/*/index.md 2>/dev/null || true
+
+echo "[pre-commit] ok"

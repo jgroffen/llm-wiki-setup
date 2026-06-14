@@ -37,7 +37,7 @@ git init
 
 If it is already an Obsidian vault, preserve existing `.obsidian/` basics and ignore plugin state, caches, workspace churn, private files, and binary source files by default.
 
-Create a safe `.gitignore` that ignores:
+Ensure a safe `.gitignore` exists that ignores:
 
 ```gitignore
 .DS_Store
@@ -95,7 +95,7 @@ llmwiki-01-core-structure
 
 ### Step 02: Schema And Agent Rules
 
-Create:
+Review and if required create or update:
 - `AGENTS.md`
 - `CLAUDE.md`
 - `Schema/frontmatter-schema.md`
@@ -144,7 +144,7 @@ Do not rely on generated text alone. Keep the transformation visible: a small Ra
 
 ### Step 03: Templates
 
-Create:
+Review and if required create or update:
 
 - `_templates/source-note.md`
 - `_templates/concept-note.md`
@@ -199,9 +199,9 @@ llmwiki-03-templates
 
 ### Step 04: Deterministic Tooling
 
-Create `scripts/wiki_tool.py` using only the Python standard library.
+Review and if required create or update `scripts/wiki_tool.py`.
 
-Required commands:
+Ensure `scripts/wiki_tool.py` uses only the Python standard library and is consistent with the following required commands:
 
 - `doctor`: non-mutating health check for folders, Python version, catalog, source manifest, and basic note counts.
 - `build`: generate `Wiki/catalog.jsonl`, `Wiki/index.md`, and per-folder index files.
@@ -212,9 +212,9 @@ Required commands:
 - `source-delta`: show Raw sources not represented in the manifest.
 - `source-coverage`: show which Raw sources are covered by compiled Wiki notes.
 - `search-catalog --query "text"`: search compiled Wiki notes through the catalog.
-- `log --title "title" --details "details"`: add a log record to `Wiki/logs/`.
+- `log --title "title" --details "details"`: add a log record to `Wiki/Logs/`.
 
-Create:
+Alse ensure the following exist and are consistent with `scripts/wiki_tool.py`:
 
 - `scripts/install_hooks.sh`
 - `.githooks/pre-commit`
@@ -263,13 +263,13 @@ llmwiki-04-tooling
 
 ### Step 05: Agent Skills
 
-Create:
+Review and if required create or update:
 - `.agents/skills/llm-wiki-ingest/SKILL.md`
 - `.agents/skills/llm-wiki-query/SKILL.md`
 - `.agents/skills/llm-wiki-lint/SKILL.md`
 - `.agents/skills/llm-wiki-maintain/SKILL.md`
 
-Ensure each `SKILL.md` file you create includes a valid frontmatter section that describes the skill, for example:
+Ensure each llm-wiki `SKILL.md` file includes a valid frontmatter section that describes the skill, for example:
 
 ```
 ---

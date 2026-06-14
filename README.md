@@ -48,12 +48,15 @@ git clone https://github.com/kepano/obsidian-skills.git ~/.opencode/skills/obsid
       folder you select.
 2. Copy `llm-wiki-setup.md` from this project to the root of the new Vault.:
    
-   ```
-   cp -r /path/to/llm-wiki-setup/llm-wiki-setup.md /path/to/new/vault/
+   ```bash
+   NEW_WIKI_PATH=/path/to/new/vault/
+   cp llm-wiki-setup.md $NEW_WIKI_PATH
+   cp -r template/* $NEW_WIKI_PATH
    ```
 
-3. From the root of your new Vault, start your local AI client tool and give it
-   the following prompt:
+3. From the root of your new Vault, start your local AI client tool. If you
+   haven't yet, ensure your local tool has access to the obsidian skills
+   (usually with a `/skills` command), then give it the following prompt:
    
    ```
    Use @llm-wiki-setup.md to build the core LLM Wiki in this folder. Follow the setup order exactly, commit after each major step if git is available, run the maintenance checks, and stop once `Step 06: Final Acceptance Criteria` described in @llm-wiki-setup.md passes.
