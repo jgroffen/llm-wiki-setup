@@ -16,6 +16,13 @@ Commands:
   source-coverage                Which Raw sources are covered by compiled notes.
   search-catalog --query "text"  Search compiled notes via the catalog.
   log --title "t" --details "d"  Add a log note under Wiki/Logs/.
+  plugins                        List installed plugins and their note types.
+
+Plugins:
+  The four core note types (topic, concept, entity, log) can be extended by plugins.
+  A plugin drops a manifest at Schema/plugins/<name>.json declaring extra note types
+  (tag + folder + requires_source). build/lint/doctor honor them automatically, with no
+  edits to this file. See Schema/plugin-schema.md.
 """
 
 import argparse
@@ -29,18 +36,74 @@ ROOT = Path(__file__).resolve().parent.parent
 
 SOURCES_DIR = ROOT / "Raw" / "Sources"
 WIKI_DIR = ROOT / "Wiki"
-WIKI_SUBDIRS = {
-    "topic": WIKI_DIR / "Topics",
-    "concept": WIKI_DIR / "Concepts",
-    "entity": WIKI_DIR / "Entities",
-    "log": WIKI_DIR / "Logs",
-}
 CATALOG = WIKI_DIR / "catalog.jsonl"
 WIKI_INDEX = WIKI_DIR / "index.md"
 MANIFEST = ROOT / "Schema" / "source-manifest.jsonl"
+PLUGINS_DIR = ROOT / "Schema" / "plugins"
 
-ALLOWED_TAGS = ("topic", "concept", "entity", "log")
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+# Built-in note types. Plugins add more via Schema/plugins/*.json (see _load_note_types).
+CORE_NOTE_TYPES = [
+    {"tag": "topic", "folder": "Wiki/Topics", "requires_source": True},
+    {"tag": "concept", "folder": "Wiki/Concepts", "requires_source": True},
+    {"tag": "entity", "folder": "Wiki/Entities", "requires_source": True},
+    {"tag": "log", "folder": "Wiki/Logs", "requires_source": False},
+]
+
+
+def _load_note_types():
+    """Merge core note types with any declared by plugins under Schema/plugins/*.json.
+
+    Returns (registry, tag_order, plugins, errors). The registry maps tag -> dict with
+    'folder', 'requires_source', and 'origin'. Collisions and unreadable manifests are
+    collected as error strings rather than raised, so a single bad plugin degrades
+    gracefully instead of breaking every command.
+    """
+    registry, order, errors = {}, [], []
+
+    def add(tag, folder, requires_source, origin):
+        if tag in registry:
+            errors.append(
+                f"note type '{tag}' ({origin}) already declared by {registry[tag]['origin']}"
+            )
+            return
+        for existing_tag, info in registry.items():
+            if info["folder"] == folder:
+                errors.append(
+                    f"folder '{folder}' is claimed by both '{existing_tag}' and '{tag}' ({origin})"
+                )
+                return
+        registry[tag] = {"folder": folder, "requires_source": requires_source, "origin": origin}
+        order.append(tag)
+
+    for nt in CORE_NOTE_TYPES:
+        add(nt["tag"], nt["folder"], nt["requires_source"], "core")
+
+    plugins = []
+    if PLUGINS_DIR.is_dir():
+        for manifest in sorted(PLUGINS_DIR.glob("*.json")):
+            try:
+                data = json.loads(manifest.read_text(encoding="utf-8"))
+            except (ValueError, OSError) as exc:
+                errors.append(f"plugin manifest {manifest.name}: cannot read/parse ({exc})")
+                continue
+            name = data.get("name", manifest.stem)
+            plugins.append(data)
+            for nt in data.get("note_types", []):
+                tag, folder = nt.get("tag"), nt.get("folder")
+                if not tag or not folder:
+                    errors.append(f"plugin '{name}': a note_type is missing 'tag' or 'folder'")
+                    continue
+                add(tag, folder, bool(nt.get("requires_source", True)), f"plugin:{name}")
+
+    return registry, order, plugins, errors
+
+
+REGISTRY, TAG_ORDER, PLUGINS, PLUGIN_ERRORS = _load_note_types()
+ALLOWED_TAGS = tuple(TAG_ORDER)
+WIKI_SUBDIRS = {tag: ROOT / REGISTRY[tag]["folder"] for tag in TAG_ORDER}
+REQUIRES_SOURCE = {tag: REGISTRY[tag]["requires_source"] for tag in TAG_ORDER}
 
 GREEN = "\033[32m"
 RED = "\033[31m"
@@ -164,10 +227,14 @@ def iter_wiki_notes():
 
 
 def iter_sources():
-    """Yield (path, frontmatter, body) for Raw sources."""
+    """Yield (path, frontmatter, body) for Raw sources, recursing into subfolders.
+
+    Recursion lets plugins keep sources in subdirectories (e.g. Raw/Sources/cards/)
+    while plain top-level sources keep working.
+    """
     if not SOURCES_DIR.exists():
         return
-    for p in sorted(SOURCES_DIR.glob("*.md")):
+    for p in sorted(SOURCES_DIR.rglob("*.md")):
         if is_index(p):
             continue
         fm, body = parse_frontmatter(read(p))
@@ -192,10 +259,22 @@ def note_title(path, fm, body):
 
 
 def normalize_source(entry):
-    """Normalize a sources entry to 'Raw/Sources/<name>' posix form."""
-    s = str(entry).strip().strip("\"'")
-    name = Path(s).name
-    return (SOURCES_DIR / name).resolve().relative_to(ROOT).as_posix()
+    """Normalize a sources entry to a 'Raw/Sources/<subpath>' posix form.
+
+    Preserves subfolders so plugin sources like 'Raw/Sources/cards/foo.md' resolve
+    correctly, while a bare 'foo.md' still resolves against Raw/Sources/.
+    """
+    s = str(entry).strip().strip("\"'").replace("\\", "/")
+    marker = "Raw/Sources/"
+    if marker in s:
+        s = s.split(marker, 1)[1]
+    elif s.startswith("Raw/"):
+        s = Path(s).name
+    target = (SOURCES_DIR / s).resolve()
+    try:
+        return target.relative_to(ROOT).as_posix()
+    except ValueError:
+        return (Path("Raw/Sources") / s).as_posix()
 
 
 def coverage_map():
@@ -211,6 +290,33 @@ def coverage_map():
 # --------------------------------------------------------------------------- #
 # Commands
 # --------------------------------------------------------------------------- #
+def _plugin_guard():
+    """Print any plugin-manifest errors. Return True if the config is unusable."""
+    if PLUGIN_ERRORS:
+        for err in PLUGIN_ERRORS:
+            print(f"{RED}PLUGIN{RESET}: {err}")
+        print(f"{RED}plugin config has {len(PLUGIN_ERRORS)} problem(s); fix Schema/plugins/{RESET}")
+        return True
+    return False
+
+
+def cmd_plugins(args):
+    if _plugin_guard():
+        return 1
+    if not PLUGINS:
+        print("No plugins installed. Core note types: " + ", ".join(ALLOWED_TAGS))
+        return 0
+    for plugin in PLUGINS:
+        name = plugin.get("name", "?")
+        version = plugin.get("version", "")
+        print(f"{GREEN}{name}{RESET} {version}".rstrip())
+        for nt in plugin.get("note_types", []):
+            src = "source required" if nt.get("requires_source", True) else "no source"
+            print(f"    {nt.get('tag','?'):10} -> {nt.get('folder','?')} ({src})")
+    print(f"\nAll note types: {', '.join(ALLOWED_TAGS)}")
+    return 0
+
+
 def cmd_doctor(args):
     problems = []
     info = []
@@ -223,10 +329,7 @@ def cmd_doctor(args):
     required_dirs = [
         SOURCES_DIR,
         ROOT / "Raw" / "Files",
-        WIKI_SUBDIRS["topic"],
-        WIKI_SUBDIRS["concept"],
-        WIKI_SUBDIRS["entity"],
-        WIKI_SUBDIRS["log"],
+        *WIKI_SUBDIRS.values(),
         ROOT / "Schema",
         ROOT / "_templates",
         ROOT / ".agents" / "skills",
@@ -235,6 +338,16 @@ def cmd_doctor(args):
     for d in required_dirs:
         if not d.is_dir():
             problems.append(f"missing folder: {rel(d) if d.exists() else d.relative_to(ROOT)}")
+
+    for err in PLUGIN_ERRORS:
+        problems.append(f"plugin config: {err}")
+
+    if PLUGINS:
+        names = ", ".join(p.get("name", "?") for p in PLUGINS)
+        info.append(f"plugins: {len(PLUGINS)} ({names})")
+        info.append(f"note types: {', '.join(ALLOWED_TAGS)}")
+    else:
+        info.append("plugins: none (core note types only)")
 
     notes = list(iter_wiki_notes())
     sources = list(iter_sources())
@@ -262,6 +375,8 @@ def cmd_doctor(args):
 
 
 def cmd_build(args):
+    if _plugin_guard():
+        return 1
     entries = []
     for p, fm, body in iter_wiki_notes():
         tag = note_tag(fm)
@@ -327,6 +442,8 @@ def cmd_build(args):
 
 
 def cmd_lint(args):
+    if _plugin_guard():
+        return 1
     errors = []
     count = 0
     for p, fm, body in iter_wiki_notes():
@@ -368,8 +485,8 @@ def cmd_lint(args):
             if not target.exists():
                 errors.append(f"{loc}: source not found: {entry}")
 
-        if tag != "log" and not sources:
-            errors.append(f"{loc}: non-log note must link at least one source")
+        if tag is not None and REQUIRES_SOURCE.get(tag, True) and not sources:
+            errors.append(f"{loc}: '{tag}' note must link at least one source")
 
     if errors:
         for e in errors:
@@ -580,6 +697,7 @@ def build_parser():
     sub.add_parser("doctor", help="Non-mutating health check.")
     sub.add_parser("build", help="Generate catalog and indexes.")
     sub.add_parser("lint", help="Validate compiled Wiki notes.")
+    sub.add_parser("plugins", help="List installed plugins and their note types.")
 
     sp = sub.add_parser("source-scan", help="List Raw sources / update manifest.")
     sp.add_argument("--update", action="store_true", help="Write Schema/source-manifest.jsonl.")
@@ -603,6 +721,7 @@ DISPATCH = {
     "doctor": cmd_doctor,
     "build": cmd_build,
     "lint": cmd_lint,
+    "plugins": cmd_plugins,
     "source-scan": cmd_source_scan,
     "source-lint": cmd_source_lint,
     "source-delta": cmd_source_delta,

@@ -82,12 +82,14 @@ Wiki/Concepts/
 Wiki/Entities/
 Wiki/Logs/
 Schema/
+Schema/plugins/
 _templates/
 .agents/skills/
 scripts/
 ```
 
-Add `.gitkeep` files only where needed to preserve empty folders.
+Add `.gitkeep` files only where needed to preserve empty folders (including
+`Schema/plugins/`, which holds plugin manifests and is normally empty at first).
 
 Once Step 01 is complete, commit with the following commit message:
 
@@ -104,6 +106,7 @@ Review and if required create or update:
 - `Schema/workflow-examples.md`
 - `Schema/lint-checklist.md`
 - `Schema/naming-conventions.md`
+- `Schema/plugin-schema.md`
 
 `AGENTS.md` must tell agents:
 - The LLM Wiki concept. A summary is provided in the `LLM Wiki Concept Summary` sub-section that follows this section.
@@ -215,6 +218,16 @@ Ensure `scripts/wiki_tool.py` uses only the Python standard library and is consi
 - `source-coverage`: show which Raw sources are covered by compiled Wiki notes.
 - `search-catalog --query "text"`: search compiled Wiki notes through the catalog.
 - `log --title "title" --details "details"`: add a log record to `Wiki/Logs/`.
+- `plugins`: list installed plugins and the note types they add (and serve as a
+  capability probe for plugin-aware cores).
+
+The core note types are `topic`, `concept`, `entity`, and `log`, but `wiki_tool.py` must
+derive its allowed tags and folders from a registry that merges these with any plugin
+manifests found in `Schema/plugins/*.json` — so plugins can add note types (e.g. an
+`mtg-wiki` plugin adding `card`/`set`) without editing the tool. Each plugin note type
+declares `tag`, `folder`, and `requires_source`; tag/folder collisions must fail the gates.
+`iter_sources` must recurse `Raw/Sources/` so plugin sources may live in subfolders. Document
+the manifest contract in `Schema/plugin-schema.md`.
 
 Alse ensure the following exist and are consistent with `scripts/wiki_tool.py`:
 

@@ -5,11 +5,13 @@ This is the deterministic gate enforced by `scripts/wiki_tool.py`. Run `lint` an
 ## Compiled Wiki Notes (`wiki_tool.py lint`)
 
 - [ ] Frontmatter is present and parses as YAML-like key/value blocks.
-- [ ] `tags` contains **exactly one** allowed value: `topic`, `concept`, `entity`, or `log`.
+- [ ] `tags` contains **exactly one** allowed value. Core: `topic`, `concept`, `entity`,
+      `log`. Plugins may add more (run `wiki_tool.py plugins` to see them all).
 - [ ] `created` and `updated` are present and ISO `YYYY-MM-DD` dates.
 - [ ] `source_count` is present and **equals** the number of entries in `sources`.
-- [ ] Every entry in `sources` resolves to an existing file under `Raw/Sources/`.
-- [ ] Non-`log` notes have at least one source.
+- [ ] Every entry in `sources` resolves to an existing file under `Raw/Sources/` (subfolders allowed).
+- [ ] Notes whose type `requires_source` have at least one source (`log` and source-exempt
+      plugin types are excluded).
 
 ## Raw Source Notes (`wiki_tool.py source-lint`)
 

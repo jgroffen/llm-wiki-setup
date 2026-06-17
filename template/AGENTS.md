@@ -48,7 +48,18 @@ Every compiled Wiki note must link back to its Raw source(s) in `Raw/Sources/`. 
 
 ## Allowed Compiled Note Tags
 
-Each compiled Wiki note uses exactly one of: `topic`, `concept`, `entity`, `log`.
+Each compiled Wiki note uses exactly one allowed tag. The core tags are `topic`, `concept`,
+`entity`, `log`. **Plugins may add more** (see below); run
+`python3 scripts/wiki_tool.py plugins` to see every tag currently available in this vault.
+
+## Extending the Wiki with Plugins
+
+The wiki is extensible: a plugin registers additional note types (and their folders) by
+dropping a manifest at `Schema/plugins/<name>.json`. `build`, `lint`, and `doctor` discover
+plugins automatically — **do not edit `scripts/wiki_tool.py` to add a note type.** Each
+plugin note type declares its `tag`, `folder`, and whether it `requires_source` (so derived
+notes can be source-exempt like `log`). Tags and folders must be unique; conflicts fail the
+gates with a `PLUGIN:` error. See `Schema/plugin-schema.md` for the manifest contract.
 
 ## Maintenance Gate
 

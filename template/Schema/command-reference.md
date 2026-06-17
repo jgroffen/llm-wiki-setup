@@ -17,6 +17,7 @@ All tooling is in `scripts/` and uses only the Python standard library. Run from
 | `source-coverage` | no | Show which Raw sources are covered by compiled Wiki notes. |
 | `search-catalog --query "text"` | no | Search compiled notes through the catalog. |
 | `log --title "t" --details "d"` | yes | Add a log note under `Wiki/Logs/`. |
+| `plugins` | no | List installed plugins and the note types they add. |
 
 ### Examples
 
@@ -31,7 +32,11 @@ python3 scripts/wiki_tool.py source-delta
 python3 scripts/wiki_tool.py source-coverage
 python3 scripts/wiki_tool.py search-catalog --query "navigation"
 python3 scripts/wiki_tool.py log --title "Ingest X" --details "Added concept notes from x.md"
+python3 scripts/wiki_tool.py plugins
 ```
+
+Plugins extend the allowed note types via `Schema/plugins/*.json`; see
+`Schema/plugin-schema.md`.
 
 ## `audit_public.py`
 
