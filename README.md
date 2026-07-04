@@ -46,7 +46,8 @@ git clone https://github.com/kepano/obsidian-skills.git ~/.opencode/skills/obsid
 1. In Obsidian, create a new Vault
    1. A new folder with the name of your vault will be created under the
       folder you select.
-2. Copy `llm-wiki-setup.md` from this project to the root of the new Vault.:
+2. Copy `llm-wiki-setup.md` and the templated llm-wiki files from this project
+   to the root of the new Vault.:
    
    ```bash
    NEW_WIKI_PATH=/path/to/new/vault/
@@ -60,6 +61,21 @@ git clone https://github.com/kepano/obsidian-skills.git ~/.opencode/skills/obsid
    
    ```
    Use @llm-wiki-setup.md to build the core LLM Wiki in this folder. Follow the setup order exactly, commit after each major step if git is available, run the maintenance checks, and stop once `Step 06: Final Acceptance Criteria` described in @llm-wiki-setup.md passes.
+   ```
+
+4. Install Plugins - an LLM-Wiki supports a plugin concept which adds
+   content-specific context to the wiki. Installing plugins involves cloning
+   the plugin repos and installing them into your repo:
+
+   ```bash
+   # clone the plugin repos
+   cd ~/sandbox/
+   git clone git@github.com:jgroffen/mtg-wiki.git
+   git clone git@github.com:jgroffen/llm-quiz.git
+
+   # install into your llm-wiki repo
+   ~/sandbox/mtg-wiki/install.py .
+   ~/sandbox/llm-quiz/install.py .
    ```
 
 # Usage Notes
