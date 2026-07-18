@@ -86,6 +86,74 @@ Use this prompt after the core system exists:
 Read AGENTS.md and inspect the current LLM Wiki. Search the catalog before opening Raw sources. Compile any unprocessed Raw sources into concise Wiki notes, keep every claim linked to sources, rebuild indexes, run lint/source checks, and summarize what changed.
 ```
 
+## Plugin examples
+
+The examples below assume you installed the plugins (step 4 above) and are run from the vault
+root. Each plugin also bundles skills you can drive in natural language (e.g. "populate the
+Bloomburrow set", "make a quiz about Bloomburrow", "add trivia to the quiz"); the commands are
+the deterministic equivalents.
+
+### Populate a set with `mtg-wiki`
+
+Pull a Magic set's cards from Scryfall into `card`/`set`/`mechanic` notes (or use the
+**mtg-wiki-populate** skill):
+
+```bash
+python3 scripts/mtg_tool.py populate-set --code blb --limit 15   # a slice, to try it out
+python3 scripts/mtg_tool.py populate-set --code blb              # the whole set
+```
+
+### Create a quiz with `llm-quiz`
+
+Create a quiz and its ordered categories, then add questions grounded in the wiki's notes (or
+use the **llm-quiz-author** / **llm-quiz-questions** skills):
+
+```bash
+python3 scripts/quiz_tool.py new-quiz --title "Bloomburrow Basics" \
+    --topic "the Bloomburrow set" --scope "BLB cards, mechanics & set facts" \
+    --category "Mechanics" --category "Cards" --category "Lore"
+
+python3 scripts/quiz_tool.py add-question --quiz bloomburrow-basics --category "Mechanics" \
+    --difficulty 2 --format multiple-choice \
+    --question "What does Offspring do? A) ... B) ... C) ... D) ..." \
+    --answer "B) Pay an extra cost to also make a 1/1 token copy." --based-on offspring
+```
+
+### Add trivia to a quiz with `llm-quiz`
+
+Attach wiki-grounded trivia to a share of a quiz's questions (or use the **llm-quiz-trivia**
+skill). `--quiz` is optional — omit it and the tool auto-selects the only quiz or prompts you:
+
+The easiest way is to just ask, letting the **llm-quiz-trivia** skill drive it:
+
+```
+Add trivia to about 30% of the questions in the Bloomburrow Basics quiz. Ground every fact in the wiki's content notes (not the quiz's own questions), spread it across the difficulty range, and skip anything the wiki doesn't have good material for.
+```
+
+Or run the commands directly. `--quiz` is optional — omit it and the tool auto-selects the only
+quiz or prompts you:
+
+```bash
+python3 scripts/quiz_tool.py trivia-plan --percent 30          # per-category quotas + coverage
+
+python3 scripts/quiz_tool.py add-trivia --question bloomburrow-basics-2-mechanics-11-... \
+    --trivia "Offspring debuted in Bloomburrow across many creature rarities." \
+    --based-on offspring
+```
+
+### Tailoring the prompt templates
+
+Installing a plugin drops reusable prompt templates into the vault's `_prompts/` — e.g. llm-quiz
+adds `quiz-structure.md`, `question-generation.md`, `trivia-generation.md`, and `take-quiz.md`;
+mtg-wiki adds `mtg-set-quiz.md`. The plugin **skills load these prompts** — preferring the
+vault's `_prompts/<name>.md` and falling back to a default bundled with the skill — so **editing
+a prompt is how you tailor that skill's behavior** to your vault's content domain (the topics it
+asks about, what counts as good trivia, how it runs a quiz, etc.).
+
+You don't have to wire anything up: the skills pick up your edits automatically. Tailored
+prompts are also **preserved across re-installs** — re-running a plugin's `install.py` refreshes
+the plugin code but won't overwrite a prompt you've customized.
+
 # Thankyou
 
 This process is heavily based on the work of `wanderloots`: https://github.com/wanderloots-tutorials/vibe-coding/blob/main/wanderloots-llm-wiki-core-setup-v1.0.0.md

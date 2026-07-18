@@ -92,6 +92,10 @@ def scan():
                 snippet = line[max(0, m.start() - 0): m.end() + 8]
                 if PLACEHOLDER_RE.search(line):
                     continue
+                # Skip URL path segments (e.g. "example.com/home/foo/") — these
+                # are not machine-local paths, just a "/home/" in a web address.
+                if "://" in line[:m.start()]:
+                    continue
                 problems.append(f"{rel}:{line_no}: machine-local path '{m.group(0)}...'")
     return problems
 
