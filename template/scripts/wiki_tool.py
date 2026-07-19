@@ -83,6 +83,10 @@ def _load_note_types():
     plugins = []
     if PLUGINS_DIR.is_dir():
         for manifest in sorted(PLUGINS_DIR.glob("*.json")):
+            # Skip plugin state files (e.g. <name>.prompts.json prompt receipts) — only true
+            # plugin manifests (which declare note_types) register note types.
+            if manifest.name.endswith(".prompts.json"):
+                continue
             try:
                 data = json.loads(manifest.read_text(encoding="utf-8"))
             except (ValueError, OSError) as exc:
