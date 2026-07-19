@@ -150,9 +150,12 @@ vault's `_prompts/<name>.md` and falling back to a default bundled with the skil
 a prompt is how you tailor that skill's behavior** to your vault's content domain (the topics it
 asks about, what counts as good trivia, how it runs a quiz, etc.).
 
-You don't have to wire anything up: the skills pick up your edits automatically. Tailored
-prompts are also **preserved across re-installs** — re-running a plugin's `install.py` refreshes
-the plugin code but won't overwrite a prompt you've customized.
+You don't have to wire anything up: the skills pick up your edits automatically. On re-install,
+a plugin content-hashes each prompt against a per-vault receipt: an **untouched prompt is
+auto-updated** so bundled improvements reach you, while a prompt you've **customized is
+preserved** — the installer asks keep/update/diff in a terminal, or notes an update is available
+when run non-interactively (`--update-prompts` / `--keep-prompts` override). So your tailoring is
+safe, but stock prompts won't silently go stale.
 
 # Thankyou
 
