@@ -49,6 +49,30 @@ set.
   doubles as the **capability probe**: a plugin installer can run it to confirm the core is
   plugin-aware before installing.
 
+## Shared plugin code (`scripts/wiki_plugin.py`, `scripts/wiki_notes.py`)
+
+The core template ships two importable modules so plugins don't each reimplement common
+capabilities:
+
+- **`scripts/wiki_notes.py`** — note-authoring helpers a plugin's tool script imports as a
+  sibling: `slug`, `today`, `rel`, `die`, `emit_frontmatter`/`_scalar`, `existing_created`,
+  `write_note`, `read_frontmatter`/`read_title`/`read_section`, the surgical
+  `set_frontmatter_fields`/`replace_block`/`update_managed`/`extract_managed_block` editors, and
+  `run_gate()` (shells `build`/`lint`/`source-scan`/`source-lint`). Example:
+  `from wiki_notes import slug, write_note, run_gate`.
+- **`scripts/wiki_plugin.py`** — a **`PluginInstaller` base class** holding the shared install
+  lifecycle (verify the vault, copy the payload, sync `_prompts/` against a per-vault receipt
+  with stock-auto-update/tailored-preserve, create folders, append the AGENTS section, run the
+  gate). A plugin's `install.py` imports this from the target vault and subclasses it, declaring
+  only its specifics: `name`, `manifest_name`, `agents_marker`, `agents_snippet`, `new_dirs`,
+  `payload_copies(vault)`, and `post_install_message(updating)`. See `mtg-wiki`/`llm-quiz` for
+  reference subclasses.
+
+Because these modules live in the vault (installed by the core template), a plugin **requires a
+recent-enough core**: `install.py` capability-probes `scripts/wiki_plugin.py` and each tool
+script guards its `wiki_notes` import — both tell the user to update the core (re-copy
+`template/.`) if it's missing.
+
 ## Removing a plugin
 
 Delete its manifest from `Schema/plugins/` (and, if desired, its folders/notes). The core

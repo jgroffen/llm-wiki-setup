@@ -64,8 +64,10 @@ git clone https://github.com/kepano/obsidian-skills.git ~/.opencode/skills/obsid
    ```
 
 4. Install Plugins - an LLM-Wiki supports a plugin concept which adds
-   content-specific context to the wiki. Installing plugins involves cloning
-   the plugin repos and installing them into your repo:
+   content-specific context to the wiki. Plugins reuse shared code the core ships
+   (`scripts/wiki_plugin.py`, `scripts/wiki_notes.py`), so **make sure the vault's core is
+   up to date first** (re-copy `template/.` — step 2 — if you set the vault up before those
+   modules existed). Then clone the plugin repos and install them into your repo:
 
    ```bash
    # clone the plugin repos
@@ -77,6 +79,9 @@ git clone https://github.com/kepano/obsidian-skills.git ~/.opencode/skills/obsid
    ~/sandbox/mtg-wiki/install.py .
    ~/sandbox/llm-quiz/install.py .
    ```
+
+   If a plugin's installer says the core is too old (no `scripts/wiki_plugin.py`), re-run the
+   `cp -r template/. $NEW_WIKI_PATH` from step 2 to refresh the core, then re-install.
 
 # Usage Notes
 
